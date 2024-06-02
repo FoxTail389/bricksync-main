@@ -13,6 +13,7 @@
 		"@sveltejs/adapter-auto": "^3.0.0",
 		"@sveltejs/kit": "^2.0.0",
 		"@sveltejs/vite-plugin-svelte": "^3.0.0",
+		"@types/algebra.js": "^0.2.4",
 		"autoprefixer": "^10.4.19",
 		"postcss": "^8.4.38",
 		"svelte": "^4.2.7",
@@ -24,6 +25,7 @@
 	},
 	"type": "module",
 	"dependencies": {
+		"algebra.js": "^0.2.6",
 		"canvas": "^2.11.2",
 		"konva": "^9.3.11",
 		"svelte-konva": "^0.3.1"

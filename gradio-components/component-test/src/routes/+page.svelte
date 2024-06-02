@@ -1,5 +1,25 @@
 <script lang="ts">
-  import { Stage, Layer, Image, Circle, Line } from "svelte-konva";
+  import {
+    Stage,
+    Layer,
+    Image,
+    Circle,
+    Line,
+    Ellipse,
+    Path,
+  } from "svelte-konva";
+  var Expression: any;
+  var Equation: any;
+  var radius = 10;
+  var Fraction: any;
+  function equation() {
+    // @ts-ignore
+    Expression = algebra.Expression;
+    // @ts-ignore
+    Equation = algebra.Equation;
+    // @ts-ignore
+    Fraction = algebra.Fraction;
+  }
   let state = 0;
   let imgwidth: any = null;
   let imgheight: any = null;
@@ -7,14 +27,9 @@
   let height: any = null;
   //https://konvajs.org/docs/svelte/index.html
   //
-  let y2: number = 0;
-  let md:any;
-  let mn:any;
-  let perpLine;
-  let perpLineRev;
   let cir1_config: any;
   let cir2_config: any;
-  let cir3_config:any;
+  let cir3_config: any;
   let image: any = null;
   const img = document.createElement("img");
   img.className = "w-screen";
@@ -31,10 +46,49 @@
   function getMousePosition(event: any) {
     let rect = event.target.getBoundingClientRect();
     const percent = width / imgwidth;
-    let x = event.clientX - rect.left;
-    let y = event.clientY - rect.top;
-    n = [Math.round(x / percent), Math.round(y / percent), x, y];
+    let xpos = event.clientX - rect.left;
+    let ypos = event.clientY - rect.top;
+    n = [Math.round(xpos / percent), Math.round(ypos / percent), xpos, ypos];
     if (state == 2) {
+      var x = new Expression("x");
+      var y = new Expression("y");
+      var mousex = new Fraction(xpos, 1);
+      var mousey = new Fraction(ypos, 1);
+      var mx = new Fraction(cir1_config["x"] + cir2_config["x"], 2); //new Expression("x1");
+      var my = new Fraction(cir1_config["y"] + cir2_config["y"], 2); //new Expression("y1");
+      var x2 = new Fraction(cir2_config["x"], 1); //new Expression("x2");
+      var y2 = new Fraction(cir2_config["y"], 1); //new Expression("y2");
+      var eq1 = new Equation(
+        x.subtract(mx).multiply(x2.subtract(mx)),
+        y.subtract(my).multiply(my.subtract(y2))
+      );
+      var mouseeq = new Equation(
+        x.subtract(mousex).multiply(y2.subtract(my)),
+        y.subtract(mousey).multiply(x2.subtract(mx))
+      );
+      var xeq;
+      var yeq;
+      try {
+        var asy = eq1.solveFor("y");
+        try {
+          var asx = eq1.solveFor("x");
+          var solveforx = new Equation(asy, mouseeq.solveFor("y"));
+          xeq = solveforx.solveFor("x");
+          var solvefory = new Equation(asx, xeq);
+          yeq = solvefory.solveFor("y");
+        } catch (err1) {
+          yeq = asy;
+          xeq = mouseeq.solveFor("x");
+        }
+      } catch (err) {
+        xeq = eq1.solveFor("x");
+        yeq = mouseeq.solveFor("y");
+      }
+      var pointx = Math.round(xeq["numer"] / xeq["denom"]);
+      var pointy = Math.round(yeq["numer"] / yeq["denom"]);
+      cir3_config.x = pointx;
+      cir3_config.y = pointy;
+      console.log(Math.atan((cir2_config.x-cir1_config.x)/(cir2_config.y-cir1_config.y))* (180/Math.PI))
     }
     return n;
   }
@@ -47,27 +101,15 @@
         x: a[2],
         y: a[3],
         radius: 5,
-        fill: "green",
+        fill: "red",
       };
       state += 1;
     } else if (state == 1) {
-       mn = -(a[2] - cir1_config.x);
-       md = a[3] - cir1_config.y;
-      if (md == 0) {
-        perpLine = (x: number) => mn;
-        y2 = 1;
-      } else if (mn == 0) {
-        perpLine = (y: number) => a[3];
-        y2 = 2;
-      } else {
-        perpLine = (y: number) => (mn / md) * (y - a[2]) + a[3];
-        perpLineRev = (x: number) => (md / mn) * (x - a[3]) + a[2];
-      }
       cir2_config = {
         x: a[2],
         y: a[3],
         radius: 5,
-        fill: "green",
+        fill: "yellow",
       };
       cir3_config = {
         x: (cir1_config.x + cir2_config.x) / 2,
@@ -76,17 +118,20 @@
         fill: "green",
       };
       state += 1;
+    } else if (state == 2) {
+      state += 1;
     }
-    console.log(getMousePosition(event));
   }
   function cancel() {
     state = 0;
     cir1_config = null;
-    cir2_config=null
-    
+    cir2_config = null;
   }
 </script>
 
+<svelte:head>
+  <script async src="algebra-0.2.6.min.js" on:load={equation}></script>
+</svelte:head>
 <button class="w-full" on:click={click} on:mousemove={getMousePosition}>
   <Stage config={{ width: width, height: height }}>
     <Layer>
@@ -104,7 +149,7 @@
             strokeWidth: 2,
           }}
         />
-      {:else if state == 2}
+      {:else if state >= 2}
         <Circle config={cir3_config} />
         <Line
           config={{
@@ -118,7 +163,17 @@
             strokeWidth: 2,
           }}
         />
+        <Path
+        config={{
+          x: cir1_config.x,
+          y: cir1_config.y,
+          stroke: "white",
+          strokeWidth: 4,
+          data: `M0 0 A ${Math.sqrt((cir1_config.x-cir2_config.x)**2+(cir1_config.y-cir2_config.y)**2)/2} ${Math.sqrt((cir3_config.x-(cir2_config.x+cir1_config.x)/2)**2+(cir3_config.y-(cir2_config.y+cir1_config.y)/2)**2)} ${90-Math.atan((cir2_config.x-cir1_config.x)/(cir2_config.y-cir1_config.y))* (180/Math.PI)} 0 0 ${cir2_config.x-cir1_config.x} ${cir2_config.y-cir1_config.y}`, //`M 0 ${-radius} A ${radius} ${radius} 0 0 1 0 ${radius}`,
+        }}
+      />
       {/if}
+
       <Image config={{ image }} />
     </Layer>
   </Stage>
