@@ -10,7 +10,6 @@
   } from "svelte-konva";
   var Expression: any;
   var Equation: any;
-  var radius = 10;
   var Fraction: any;
   function equation() {
     // @ts-ignore
@@ -88,7 +87,13 @@
       var pointy = Math.round(yeq["numer"] / yeq["denom"]);
       cir3_config.x = pointx;
       cir3_config.y = pointy;
-      console.log(Math.atan((cir2_config.x-cir1_config.x)/(cir2_config.y-cir1_config.y))* (180/Math.PI))
+      curveDir()
+      console.log(
+        Math.atan(
+          (cir2_config.x - cir1_config.x) / (cir2_config.y - cir1_config.y)
+        ) *
+          (180 / Math.PI)
+      );
     }
     return n;
   }
@@ -127,6 +132,19 @@
     cir1_config = null;
     cir2_config = null;
   }
+  function curveDir(){
+    let va:any = [cir1_config.x,cir1_config.y]
+    let vb:any = [(cir1_config.x+cir2_config.x)/2,(cir1_config.y+cir2_config.y)/2]
+    let vc:any = [cir3_config.x,cir3_config.y]
+    let vu:any = [vb[0]-va[0],vb[1]-va[1]]
+    let vv:any = [vc[0]-vb[0],vc[1]-vb[1]]
+    let uxv = (vu[0]*vv[1])-(vu[1]*vv[0])
+    if (uxv >= 0){
+      return 0
+    }else {
+      return 1
+    }
+  }
 </script>
 
 <svelte:head>
@@ -164,14 +182,14 @@
           }}
         />
         <Path
-        config={{
-          x: cir1_config.x,
-          y: cir1_config.y,
-          stroke: "white",
-          strokeWidth: 4,
-          data: `M0 0 A ${Math.sqrt((cir1_config.x-cir2_config.x)**2+(cir1_config.y-cir2_config.y)**2)/2} ${Math.sqrt((cir3_config.x-(cir2_config.x+cir1_config.x)/2)**2+(cir3_config.y-(cir2_config.y+cir1_config.y)/2)**2)} ${90-Math.atan((cir2_config.x-cir1_config.x)/(cir2_config.y-cir1_config.y))* (180/Math.PI)} 0 0 ${cir2_config.x-cir1_config.x} ${cir2_config.y-cir1_config.y}`, //`M 0 ${-radius} A ${radius} ${radius} 0 0 1 0 ${radius}`,
-        }}
-      />
+          config={{
+            x: cir1_config.x,
+            y: cir1_config.y,
+            stroke: "white",
+            strokeWidth: 4,
+            data: `M0 0 A ${Math.sqrt((cir1_config.x - cir2_config.x) ** 2 + (cir1_config.y - cir2_config.y) ** 2) / 2} ${Math.sqrt((cir3_config.x - (cir2_config.x + cir1_config.x) / 2) ** 2 + (cir3_config.y - (cir2_config.y + cir1_config.y) / 2) ** 2)} ${90 - Math.atan((cir2_config.x - cir1_config.x) / (cir2_config.y - cir1_config.y)) * (180 / Math.PI)} 0 ${curveDir()} ${cir2_config.x - cir1_config.x} ${cir2_config.y - cir1_config.y}`, //`M 0 ${-radius} A ${radius} ${radius} 0 0 1 0 ${radius}`,
+          }}
+        />
       {/if}
 
       <Image config={{ image }} />
